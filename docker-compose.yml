@@ -1,0 +1,38 @@
+services:
+  rag-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_CONNECTION=${DB_CONNECTION}
+    command: ["python", "app/main.py"]
+  db:
+    image: pgvector/pgvector:0.8.0-pg15
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/1-init.sqp
+      - ./schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
+    ports:
+      - "5433:5433"
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+ postgres_data:
+ ollama_data:
