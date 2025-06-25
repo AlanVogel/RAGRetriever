@@ -8,9 +8,13 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      ollama:
+        condition: service_healthy
+      db:
+        condition: service_started
     environment:
       - DB_CONNECTION=${DB_CONNECTION}
+      - OLLAMA_URL=${OLLAMA_URL}
     command: ["python", "app/main.py"]
   db:
     image: pgvector/pgvector:0.8.0-pg15
@@ -20,18 +24,25 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/1-init.sqp
+      - ./init.sql:/docker-entrypoint-initdb.d/1-init.sql
       - ./schema.sql:/docker-entrypoint-initdb.d/2-schema.sql
     ports:
-      - "5433:5433"
+      - "5433:5432"
   ollama:
     build:
       context: .
       dockerfile: Dockerfile.ollama
     ports:
-      - "11434:11434"
+      - "11435:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: curl --fail http://localhost:11434/api/tags || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
  postgres_data:

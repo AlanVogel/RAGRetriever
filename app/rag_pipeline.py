@@ -6,9 +6,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class RAGPipeline:
-    def __init__(self, Session, llm, connection_string: str):
-        self.vector_store_manager = VectorStoreManager(Session, None)
-        self.vector_store = self.vector_store_manager.load_vector_store(connection_string)
+    def __init__(self, vector_store, llm):
+        self.vector_store = vector_store
         self.llm = llm
         self.qa_chain = self._setup_qa_chain()
 

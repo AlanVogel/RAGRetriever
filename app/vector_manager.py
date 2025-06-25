@@ -1,4 +1,4 @@
-from langchain.vectorstores import PGVector
+from langchain_community.vectorstores import PGVector
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,3 +46,6 @@ class VectorStoreManager:
         finally:
             session.close()
         return self.vector_store
+    
+    def close_session(self):
+        self.Session.close()

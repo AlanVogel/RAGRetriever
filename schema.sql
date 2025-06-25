@@ -1,18 +1,19 @@
 CREATE TABLE IF NOT EXISTS langchain_pg_collection (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
-    metadata JSONB
+    cmetadata JSONB
 );
 
 CREATE TABLE IF NOT EXISTS langchain_pg_embedding (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     collection_id UUID NOT NULL,
     embedding VECTOR(384) NOT NULL,
     document TEXT,
     cmetadata JSONB,
+    custom_id VARCHAR,
     CONSTRAINT fk_collection
         FOREIGN KEY (collection_id)
-        REFERENCES langchain_pg_collection(id)
+        REFERENCES langchain_pg_collection(uuid)
         ON DELETE CASCADE
 );
 
