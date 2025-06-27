@@ -1,12 +1,15 @@
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import logging
-from functools import partial
+from logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
+
+class CustomTextloader(TextLoader):
+    def __init__(self, file_path: str):
+        super().__init__(file_path, encoding="latin-1")
 
 class DocumentProcessor:
-    def __init__(self, data_dir: str, chunk_size: int = 2000, chunk_overlap: int = 200):
+    def __init__(self, data_dir: str, chunk_size: int = 100000, chunk_overlap: int = 200):
         self.data_dir = data_dir
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -16,10 +19,10 @@ class DocumentProcessor:
         try:
             loader = DirectoryLoader(
                 self.data_dir, 
-                glob="**/*.txt", 
-                loader_cls=partial(TextLoader, encoding="latin-1"),
-                silent_errors=True,
-                show_progress=True
+                glob = "**/*.txt", 
+                loader_cls = CustomTextloader,
+                silent_errors = True,
+                show_progress = True
             )
             documents = loader.load()
             logger.info(f"Loaded {len(documents)} documents")
@@ -33,7 +36,10 @@ class DocumentProcessor:
         try:
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap
+                chunk_overlap=self.chunk_overlap,
+                separators=["\nFrom: ","\n\n", "\n", " ", ""],
+                length_function=len,
+                keep_separator=True
             )
             texts = text_splitter.split_documents(documents)
             logger.info(f"Split into {len(texts)} chunks")

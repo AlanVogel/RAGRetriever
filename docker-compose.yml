@@ -39,10 +39,15 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     healthcheck:
-      test: curl --fail http://localhost:11434/api/tags || exit 1
+      test: ["CMD-SHELL","curl --fail http://localhost:11434/api/tags || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: "12g"
 
 volumes:
  postgres_data:

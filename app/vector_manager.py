@@ -1,51 +1,45 @@
 from langchain_community.vectorstores import PGVector
-import logging
+from logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 class VectorStoreManager:
-    def __init__(self, Session, embeddings):
-        self.Session = Session
+    def __init__(self, session_factory, embeddings, collection_name="newsgroups_vectors"):
+        self.session_factory = session_factory
         self.embeddings = embeddings
+        self.collection_name = collection_name
         self.vector_store = None
 
-    def build_vector_store(self, texts, connection_string):
+    def build_vector_store(self, documents, connection_string):
         logger.info("Building vector store")
-        session = self.Session()
         try:
-            self.vector_store = PGVector.from_documents(
-                documents=texts,
-                embedding=self.embeddings,
-                collection_name="newsgroups_vectors",
-                connection_string=connection_string
-            )
-            session.commit()
+            with self.session_factory() as session:
+                self.vector_store = PGVector.from_documents(
+                    documents=documents,
+                    embedding=self.embeddings,
+                    collection_name=self.collection_name,
+                    connection_string=connection_string,
+                    use_jsonb=True
+                )
+                session.commit()
             logger.info("Vector store built successfully")
         except Exception as e:
             session.rollback()
             logger.error(f"Failed to build vector store: {e}")
-            raise e
-        finally:
-            session.close()
+            raise
 
     def load_vector_store(self, connection_string):
         logger.info("Loading vector store")
-        session = self.Session()
         try:
-            self.vector_store = PGVector(
-                collection_name="newsgroups_vectors",
-                connection_string=connection_string,
-                embedding_function=self.embeddings
-            )
-            session.commit()
+            with self.session_factory() as session:
+                self.vector_store = PGVector(
+                    collection_name=self.collection_name,
+                    connection_string=connection_string,
+                    embedding_function=self.embeddings,
+                    use_jsonb=True
+                )
             logger.info("Vector store loaded successfully")
+            return self.vector_store
         except Exception as e:
-            session.rollback()
             logger.error(f"Failed to load vector store: {e}")
-            raise e
-        finally:
-            session.close()
-        return self.vector_store
-    
-    def close_session(self):
-        self.Session.close()
+            raise
